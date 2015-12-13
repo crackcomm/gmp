@@ -63,7 +63,7 @@ define(X86_PATTERN,
 [[i?86*-*-* | k[5-8]*-*-* | pentium*-*-* | athlon-*-* | viac3*-*-* | geode*-*-* | atom-*-*]])
 
 define(X86_64_PATTERN,
-[[athlon64-*-* | k8-*-* | k10-*-* | bobcat-*-* | jaguar*-*-* | bulldozer*-*-* | piledriver*-*-* | steamroller*-*-* | excavator*-*-* | zen*-*-* | pentium4-*-* | atom-*-* | silvermont-*-* | goldmont-*-* | core2-*-* | corei*-*-* | x86_64-*-* | nano-*-* | nehalem*-*-* | westmere*-*-* | sandybridge*-*-* | ivybridge*-*-* | haswell*-*-* | broadwell*-*-* | skylake*-*-* | kabylake*-*-*]])
+[[athlon64-*-* | k8-*-* | k10-*-* | bobcat-*-* | jaguar*-*-* | bulldozer*-*-* | piledriver*-*-* | steamroller*-*-* | excavator*-*-* | pentium4-*-* | atom-*-* | silvermont-*-* | goldmont-*-* | core2-*-* | corei*-*-* | x86_64-*-* | nano-*-* | nehalem*-*-* | westmere*-*-* | sandybridge*-*-* | ivybridge*-*-* | haswell*-*-* | broadwell*-*-* | skylake*-*-* | kabylake*-*-*]])
 
 dnl  GMP_FAT_SUFFIX(DSTVAR, DIRECTORY)
 dnl  ---------------------------------
@@ -741,9 +741,9 @@ main ()
   long i;
   for (i = 0; i < 88 + 1; i++)
     a[i] = ~0L;
-  r = calloc (10000, sizeof (unsigned long));
+  r = malloc (10000 * sizeof (unsigned long));
   r2 = r;
-  for (i = 0; i < 528; i += 23)
+  for (i = 0; i < 528; i += 22)
     {
       lshift_com (r2, a,
 		  i / (8 * sizeof (unsigned long)) + 1,
@@ -753,7 +753,6 @@ main ()
   if (r[2048] != 0 || r[2049] != 0 || r[2050] != 0 || r[2051] != 0 ||
       r[2052] != 0 || r[2053] != 0 || r[2054] != 0)
     abort ();
-  free (r);
   return 0;
 }
 #else
@@ -1755,9 +1754,9 @@ EOF
 gmp_compile="$CC $CFLAGS $CPPFLAGS -c conftest.c >&AC_FD_CC"
 if AC_TRY_EVAL(gmp_compile); then
   $NM conftest.$OBJEXT >conftest.out
-  if grep "[[ 	]]_gurkmacka" conftest.out >/dev/null; then
+  if grep _gurkmacka conftest.out >/dev/null; then
     gmp_cv_asm_underscore=yes
-  elif grep "[[ 	]]gurkmacka" conftest.out >/dev/null; then
+  elif grep gurkmacka conftest.out >/dev/null; then
     gmp_cv_asm_underscore=no
   else
     echo "configure: $NM doesn't have gurkmacka:" >&AC_FD_CC
@@ -3729,11 +3728,11 @@ check (const char *fmt, ...)
 
   ret = vsnprintf (buf, 4, fmt, ap);
 
-  if (ret == -1 || strcmp (buf, "hel") != 0)
+  if (strcmp (buf, "hel") != 0)
     return 1;
 
   /* allowed return values */
-  if (ret != 3 && ret != 11)
+  if (ret != -1 && ret != 3 && ret != 11)
     return 2;
 
   return 0;
