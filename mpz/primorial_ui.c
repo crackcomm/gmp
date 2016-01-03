@@ -2,7 +2,7 @@
 
 Contributed to the GNU project by Marco Bodrato.
 
-Copyright 2012 Free Software Foundation, Inc.
+Copyright 2012, 2015, 2016 Free Software Foundation, Inc.
 
 This file is part of the GNU MP Library.
 
@@ -56,7 +56,8 @@ see https://www.gnu.org/licenses/.  */
       ++__i;							\
       if (((sieve)[__index] & __mask) == 0)			\
 	{							\
-	  (prime) = id_to_n(__i)
+	  mp_limb_t prime;					\
+	  prime = id_to_n(__i)
 
 #define LOOP_ON_SIEVE_BEGIN(prime,start,end,off,sieve)		\
   do {								\
@@ -73,7 +74,7 @@ see https://www.gnu.org/licenses/.  */
 	}							\
       __mask = __mask << 1 | __mask >> (GMP_LIMB_BITS-1);	\
       __index += __mask & 1;					\
-    }  while (__i <= __max_i)					\
+    }  while (__i <= __max_i)
 
 #define LOOP_ON_SIEVE_END					\
     LOOP_ON_SIEVE_STOP;						\
@@ -114,18 +115,18 @@ mpz_primorial_ui (mpz_ptr x, unsigned long n)
 
   if (n < numberof (table))
     {
-      PTR (x)[0] = table[n];
+      MPZ_NEWALLOC (x, 1)[0] = table[n];
       SIZ (x) = 1;
     }
   else
     {
       mp_limb_t *sieve, *factors;
-      mp_size_t size;
+      mp_size_t size, j;
       mp_limb_t prod;
-      mp_limb_t j;
       TMP_DECL;
 
-      size = 1 + n / GMP_NUMB_BITS + n / (2*GMP_NUMB_BITS);
+      size = n / GMP_NUMB_BITS;
+      size = size + (size >> 1) + 1;
       ASSERT (size >= primesieve_size (n));
       sieve = MPZ_NEWALLOC (x, size);
       size = (gmp_primesieve (sieve, n) + 1) / log_n_max (n) + 1;
@@ -139,7 +140,7 @@ mpz_primorial_ui (mpz_ptr x, unsigned long n)
 
       /* Store primes from 5 to n */
       {
-	mp_limb_t prime, max_prod;
+	mp_limb_t max_prod;
 
 	max_prod = GMP_NUMB_MAX / n;
 
@@ -148,7 +149,7 @@ mpz_primorial_ui (mpz_ptr x, unsigned long n)
 	LOOP_ON_SIEVE_END;
       }
 
-      if (LIKELY (j != 0))
+      if (j != 0)
 	{
 	  factors[j++] = prod;
 	  mpz_prodlimbs (x, factors, j);
