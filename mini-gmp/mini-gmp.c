@@ -2,7 +2,7 @@
 
    Contributed to the GNU project by Niels Möller
 
-Copyright 1991-1997, 1999-2016 Free Software Foundation, Inc.
+Copyright 1991-1997, 1999-2015 Free Software Foundation, Inc.
 
 This file is part of the GNU MP Library.
 
@@ -68,8 +68,6 @@ see https://www.gnu.org/licenses/.  */
 
 #define GMP_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define GMP_MAX(a, b) ((a) > (b) ? (a) : (b))
-
-#define GMP_CMP(a,b) (((a) > (b)) - ((a) < (b)))
 
 #define gmp_assert_nocarry(x) do { \
     mp_limb_t __cy = (x);	   \
@@ -456,7 +454,7 @@ mpn_sub_1 (mp_ptr rp, mp_srcptr ap, mp_size_t n, mp_limb_t b)
     {
       mp_limb_t a = ap[i];
       /* Carry out */
-      mp_limb_t cy = a < b;
+      mp_limb_t cy = a < b;;
       rp[i] = a - b;
       b = cy;
     }
@@ -727,44 +725,22 @@ mpn_neg (mp_ptr rp, mp_srcptr up, mp_size_t n)
 
 
 /* MPN division interface. */
-
-/* The 3/2 inverse is defined as
-
-     m = floor( (B^3-1) / (B u1 + u0)) - B
-*/
 mp_limb_t
 mpn_invert_3by2 (mp_limb_t u1, mp_limb_t u0)
 {
-  mp_limb_t r, p, m, ql;
-  unsigned ul, uh, qh;
+  mp_limb_t r, p, m;
+  unsigned ul, uh;
+  unsigned ql, qh;
 
+  /* First, do a 2/1 inverse. */
+  /* The inverse m is defined as floor( (B^2 - 1 - u1)/u1 ), so that 0 <
+   * B^2 - (B + m) u1 <= u1 */
   assert (u1 >= GMP_LIMB_HIGHBIT);
 
-  /* For notation, let b denote the half-limb base, so that B = b^2.
-     Split u1 = b uh + ul. */
   ul = u1 & GMP_LLIMB_MASK;
   uh = u1 >> (GMP_LIMB_BITS / 2);
 
-  /* Approximation of the high half of quotient. Differs from the 2/1
-     inverse of the half limb uh, since we have already subtracted
-     u0. */
   qh = ~u1 / uh;
-
-  /* Adjust to get a half-limb 3/2 inverse, i.e., we want
-
-     qh' = floor( (b^3 - 1) / u) - b = floor ((b^3 - b u - 1) / u
-         = floor( (b (~u) + b-1) / u),
-
-     and the remainder
-
-     r = b (~u) + b-1 - qh (b uh + ul)
-       = b (~u - qh uh) + b-1 - qh ul
-
-     Subtraction of qh ul may underflow, which implies adjustments.
-     But by normalization, 2 u >= B > qh ul, so we need to adjust by
-     at most 2.
-  */
-
   r = ((~u1 - (mp_limb_t) qh * uh) << (GMP_LIMB_BITS / 2)) | GMP_LLIMB_MASK;
 
   p = (mp_limb_t) qh * ul;
@@ -782,19 +758,11 @@ mpn_invert_3by2 (mp_limb_t u1, mp_limb_t u0)
     }
   r -= p;
 
-  /* Low half of the quotient is
-
-       ql = floor ( (b r + b-1) / u1).
-
-     This is a 3/2 division (on half-limbs), for which qh is a
-     suitable inverse. */
-
+  /* Do a 3/2 division (with half limb size) */
   p = (r >> (GMP_LIMB_BITS / 2)) * qh + r;
-  /* Unlike full-limb 3/2, we can add 1 without overflow. For this to
-     work, it is essential that ql is a full mp_limb_t. */
   ql = (p >> (GMP_LIMB_BITS / 2)) + 1;
 
-  /* By the 3/2 trick, we don't need the high half limb. */
+  /* By the 3/2 method, we don't need the high half limb. */
   r = (r << (GMP_LIMB_BITS / 2)) + GMP_LLIMB_MASK - ql * u1;
 
   if (r >= (p << (GMP_LIMB_BITS / 2)))
@@ -809,8 +777,6 @@ mpn_invert_3by2 (mp_limb_t u1, mp_limb_t u0)
       r -= u1;
     }
 
-  /* Now m is the 2/1 invers of u1. If u0 > 0, adjust it to become a
-     3/2 inverse. */
   if (u0 > 0)
     {
       mp_limb_t th, tl;
@@ -1356,8 +1322,6 @@ mpn_set_str_bits (mp_ptr rp, const unsigned char *sp, size_t sn,
   return rn;
 }
 
-/* Result is usually normalized, except for all-zero input, in which
-   case a single zero limb is written at *RP, and 1 is returned. */
 static mp_size_t
 mpn_set_str_other (mp_ptr rp, const unsigned char *sp, size_t sn,
 		   mp_limb_t b, const struct mpn_base_info *info)
@@ -1366,8 +1330,6 @@ mpn_set_str_other (mp_ptr rp, const unsigned char *sp, size_t sn,
   mp_limb_t w;
   unsigned k;
   size_t j;
-
-  assert (sn > 0);
 
   k = 1 + (sn - 1) % info->exp;
 
@@ -1378,7 +1340,7 @@ mpn_set_str_other (mp_ptr rp, const unsigned char *sp, size_t sn,
 
   rp[0] = w;
 
-  for (rn = 1; j < sn;)
+  for (rn = (w > 0); j < sn;)
     {
       mp_limb_t cy;
 
@@ -1458,7 +1420,7 @@ mpz_realloc (mpz_t r, mp_size_t size)
   if (r->_mp_alloc)
     r->_mp_d = gmp_xrealloc_limbs (r->_mp_d, size);
   else
-    r->_mp_d = gmp_xalloc_limbs (size);
+    r->_mp_d = gmp_xalloc_limbs (size);  
   r->_mp_alloc = size;
 
   if (GMP_ABS (r->_mp_size) > size)
@@ -1559,11 +1521,14 @@ mpz_fits_ulong_p (const mpz_t u)
 long int
 mpz_get_si (const mpz_t u)
 {
-  if (u->_mp_size < 0)
-    /* This expression is necessary to properly handle 0x80000000 */
-    return -1 - (long) ((u->_mp_d[0] - 1) & ~GMP_LIMB_HIGHBIT);
+  mp_size_t us = u->_mp_size;
+
+  if (us > 0)
+    return (long) (u->_mp_d[0] & ~GMP_LIMB_HIGHBIT);
+  else if (us < 0)
+    return (long) (- u->_mp_d[0] | GMP_LIMB_HIGHBIT);
   else
-    return (long) (mpz_get_ui (u) & ~GMP_LIMB_HIGHBIT);
+    return 0;
 }
 
 unsigned long int
@@ -1596,7 +1561,7 @@ mpz_realloc2 (mpz_t x, mp_bitcnt_t n)
 mp_srcptr
 mpz_limbs_read (mpz_srcptr x)
 {
-  return x->_mp_d;
+  return x->_mp_d;;
 }
 
 mp_ptr
@@ -1776,7 +1741,9 @@ mpz_cmp_d (const mpz_t x, double d)
 int
 mpz_sgn (const mpz_t u)
 {
-  return GMP_CMP (u->_mp_size, 0);
+  mp_size_t usize = u->_mp_size;
+
+  return (usize > 0) - (usize < 0);
 }
 
 int
@@ -1791,7 +1758,13 @@ mpz_cmp_si (const mpz_t u, long v)
   else if (usize >= 0)
     return 1;
   else /* usize == -1 */
-    return GMP_CMP (GMP_NEG_CAST (mp_limb_t, v), u->_mp_d[0]);
+    {
+      mp_limb_t ul = u->_mp_d[0];
+      if ((mp_limb_t)GMP_NEG_CAST (unsigned long int, v) < ul)
+	return -1;
+      else
+	return (mp_limb_t)GMP_NEG_CAST (unsigned long int, v) > ul;
+    }
 }
 
 int
@@ -1804,7 +1777,10 @@ mpz_cmp_ui (const mpz_t u, unsigned long v)
   else if (usize < 0)
     return -1;
   else
-    return GMP_CMP (mpz_get_ui (u), v);
+    {
+      mp_limb_t ul = (usize > 0) ? u->_mp_d[0] : 0;
+      return (ul > v) - (ul < v);
+    }
 }
 
 int
@@ -1824,10 +1800,15 @@ mpz_cmp (const mpz_t a, const mpz_t b)
 int
 mpz_cmpabs_ui (const mpz_t u, unsigned long v)
 {
-  if (GMP_ABS (u->_mp_size) > 1)
+  mp_size_t un = GMP_ABS (u->_mp_size);
+  mp_limb_t ul;
+
+  if (un > 1)
     return 1;
-  else
-    return GMP_CMP (mpz_get_ui (u), v);
+
+  ul = (un == 1) ? u->_mp_d[0] : 0;
+
+  return (ul > v) - (ul < v);
 }
 
 int
@@ -2454,7 +2435,7 @@ mpz_div_r_2exp (mpz_t r, const mpz_t u, mp_bitcnt_t bit_index,
 	  mpn_neg (rp, rp, rn);
 
 	  rp[rn-1] &= mask;
-
+	      
 	  /* us is not used for anything else, so we can modify it
 	     here to indicate flipped sign. */
 	  us = -us;
@@ -4126,7 +4107,7 @@ mpz_set_str (mpz_t r, const char *sp, int base)
   unsigned bits;
   mp_size_t rn, alloc;
   mp_ptr rp;
-  size_t dn;
+  size_t sn;
   int sign;
   unsigned char *dp;
 
@@ -4140,17 +4121,18 @@ mpz_set_str (mpz_t r, const char *sp, int base)
 
   if (base == 0)
     {
-      if (sp[0] == '0')
+      if (*sp == '0')
 	{
-	  if (sp[1] == 'x' || sp[1] == 'X')
+	  sp++;
+	  if (*sp == 'x' || *sp == 'X')
 	    {
 	      base = 16;
-	      sp += 2;
+	      sp++;
 	    }
-	  else if (sp[1] == 'b' || sp[1] == 'B')
+	  else if (*sp == 'b' || *sp == 'B')
 	    {
 	      base = 2;
-	      sp += 2;
+	      sp++;
 	    }
 	  else
 	    base = 8;
@@ -4159,20 +4141,16 @@ mpz_set_str (mpz_t r, const char *sp, int base)
 	base = 10;
     }
 
-  if (!*sp)
-    {
-      r->_mp_size = 0;
-      return -1;
-    }
-  dp = (unsigned char *) gmp_xalloc (strlen (sp));
+  sn = strlen (sp);
+  dp = (unsigned char *) gmp_xalloc (sn + (sn == 0));
 
-  for (dn = 0; *sp; sp++)
+  for (sn = 0; *sp; sp++)
     {
       unsigned digit;
 
       if (isspace ((unsigned char) *sp))
 	continue;
-      else if (*sp >= '0' && *sp <= '9')
+      if (*sp >= '0' && *sp <= '9')
 	digit = *sp - '0';
       else if (*sp >= 'a' && *sp <= 'z')
 	digit = *sp - 'a' + 10;
@@ -4188,33 +4166,24 @@ mpz_set_str (mpz_t r, const char *sp, int base)
 	  return -1;
 	}
 
-      dp[dn++] = digit;
+      dp[sn++] = digit;
     }
 
-  if (!dn)
-    {
-      gmp_free (dp);
-      r->_mp_size = 0;
-      return -1;
-    }
   bits = mpn_base_power_of_two_p (base);
 
   if (bits > 0)
     {
-      alloc = (dn * bits + GMP_LIMB_BITS - 1) / GMP_LIMB_BITS;
+      alloc = (sn * bits + GMP_LIMB_BITS - 1) / GMP_LIMB_BITS;
       rp = MPZ_REALLOC (r, alloc);
-      rn = mpn_set_str_bits (rp, dp, dn, bits);
+      rn = mpn_set_str_bits (rp, dp, sn, bits);
     }
   else
     {
       struct mpn_base_info info;
       mpn_get_base_info (&info, base);
-      alloc = (dn + info.exp - 1) / info.exp;
+      alloc = (sn + info.exp - 1) / info.exp;
       rp = MPZ_REALLOC (r, alloc);
-      rn = mpn_set_str_other (rp, dp, dn, base, &info);
-      /* Normalization, needed for all-zero input. */
-      assert (rn > 0);
-      rn -= rp[rn-1] == 0;
+      rn = mpn_set_str_other (rp, dp, sn, base, &info);
     }
   assert (rn <= alloc);
   gmp_free (dp);
