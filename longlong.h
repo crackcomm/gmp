@@ -1,6 +1,6 @@
 /* longlong.h -- definitions for mixed size 32/64 bit arithmetic.
 
-Copyright 1991-1994, 1996, 1997, 1999-2005, 2007-2009, 2011-2016 Free Software
+Copyright 1991-1994, 1996, 1997, 1999-2005, 2007-2009, 2011-2015 Free Software
 Foundation, Inc.
 
 This file is part of the GNU MP Library.
@@ -424,17 +424,17 @@ long __MPN(count_leading_zeros) (UDItype);
 	   : "=r" (sh),							\
 	     "=&r" (sl)							\
 	   : "r"  ((USItype) (ah)),					\
-	     "rICal" ((USItype) (bh)),					\
+	     "rIJ" ((USItype) (bh)),					\
 	     "%r" ((USItype) (al)),					\
-	     "rICal" ((USItype) (bl)))
+	     "rIJ" ((USItype) (bl)))
 #define sub_ddmmss(sh, sl, ah, al, bh, bl) \
   __asm__ ("sub.f\t%1, %4, %5\n\tsbc\t%0, %2, %3"			\
 	   : "=r" (sh),							\
 	     "=&r" (sl)							\
 	   : "r" ((USItype) (ah)),					\
-	     "rICal" ((USItype) (bh)),					\
+	     "rIJ" ((USItype) (bh)),					\
 	     "r" ((USItype) (al)),					\
-	     "rICal" ((USItype) (bl)))
+	     "rIJ" ((USItype) (bl)))
 #endif
 
 #if defined (__arm__) && (defined (__thumb2__) || !defined (__thumb__)) \
@@ -506,7 +506,6 @@ long __MPN(count_leading_zeros) (UDItype);
 	   : "r" ((USItype) (a)), "r" ((USItype) (b)) __CLOBBER_CC);	\
   } while (0)
 #define UMUL_TIME 20
-#ifndef LONGLONG_STANDALONE
 #define udiv_qrnnd(q, r, n1, n0, d) \
   do { UWtype __r;							\
     (q) = __MPN(udiv_qrnnd) (&__r, (n1), (n0), (d));			\
@@ -514,7 +513,6 @@ long __MPN(count_leading_zeros) (UDItype);
   } while (0)
 extern UWtype __MPN(udiv_qrnnd) (UWtype *, UWtype, UWtype, UWtype);
 #define UDIV_TIME 200
-#endif /* LONGLONG_STANDALONE */
 #else /* ARMv4 or newer */
 #define umul_ppmm(xh, xl, a, b) \
   __asm__ ("umull %0,%1,%2,%3" : "=&r" (xl), "=&r" (xh) : "r" (a), "r" (b))
@@ -534,6 +532,7 @@ extern UWtype __MPN(udiv_qrnnd) (UWtype *, UWtype, UWtype, UWtype);
 #endif /* defined(__ARM_ARCH_2__) ... */
 #define count_leading_zeros(count, x)  count_leading_zeros_gcc_clz(count, x)
 #define count_trailing_zeros(count, x)  count_trailing_zeros_gcc_ctz(count, x)
+#define COUNT_LEADING_ZEROS_0 32
 #endif /* __arm__ */
 
 #if defined (__aarch64__) && W_TYPE_SIZE == 64
@@ -557,6 +556,7 @@ extern UWtype __MPN(udiv_qrnnd) (UWtype *, UWtype, UWtype, UWtype);
   } while (0)
 #define count_leading_zeros(count, x)  count_leading_zeros_gcc_clz(count, x)
 #define count_trailing_zeros(count, x)  count_trailing_zeros_gcc_ctz(count, x)
+#define COUNT_LEADING_ZEROS_0 64
 #endif /* __aarch64__ */
 
 #if defined (__clipper__) && W_TYPE_SIZE == 32
@@ -938,6 +938,7 @@ extern UWtype __MPN(udiv_qrnnd) (UWtype *, UWtype, UWtype, UWtype);
       double    d;							\
       unsigned  a[2];							\
     } __u;								\
+    ASSERT ((n) != 0);							\
     __u.d = (UWtype) (n);						\
     (c) = 0x3FF + 31 - (__u.a[1] >> 20);				\
   } while (0)
@@ -2103,8 +2104,7 @@ extern __longlong_h_C UWtype mpn_udiv_qrnnd_r (UWtype, UWtype, UWtype, UWtype *)
 
 /* If the processor has no udiv_qrnnd but sdiv_qrnnd, go through
    __udiv_w_sdiv (defined in libgcc or elsewhere).  */
-#if !defined (udiv_qrnnd) && defined (sdiv_qrnnd) \
-  && ! defined (LONGLONG_STANDALONE)
+#if !defined (udiv_qrnnd) && defined (sdiv_qrnnd)
 #define udiv_qrnnd(q, r, nh, nl, d) \
   do {									\
     UWtype __r;								\
