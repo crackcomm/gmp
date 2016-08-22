@@ -1,6 +1,6 @@
 /*
 
-Copyright 2012-2014, 2016 Free Software Foundation, Inc.
+Copyright 2012, 2013 Free Software Foundation, Inc.
 
 This file is part of the GNU MP Library test suite.
 
@@ -78,10 +78,6 @@ test_small (void)
     { "0x", NULL },
     { "0b", NULL },
     { "0z", NULL },
-    { "-", NULL },
-    { "-0x ", NULL },
-    { "0|1", NULL },
-    { "4+4", NULL },
     { "0ab", NULL },
     { "10x0", NULL },
     { "0xxab", NULL },
@@ -310,7 +306,6 @@ testmain (int argc, char **argv)
 		}
 	    }
 	  free (ap);
-	  free (rp);
 	  testfree (bp);
 	}
     }
