@@ -6,7 +6,7 @@
    SAFE TO REACH IT THROUGH DOCUMENTED INTERFACES.  IN FACT, IT IS ALMOST
    GUARANTEED THAT IT WILL CHANGE OR DISAPPEAR IN A FUTURE GMP RELEASE.
 
-Copyright 2009, 2010 Free Software Foundation, Inc.
+Copyright 2009, 2010, 2015 Free Software Foundation, Inc.
 
 This file is part of the GNU MP Library.
 
@@ -34,7 +34,6 @@ You should have received copies of the GNU General Public License and the
 GNU Lesser General Public License along with the GNU MP Library.  If not,
 see https://www.gnu.org/licenses/.  */
 
-#include "gmp.h"
 #include "gmp-impl.h"
 #include "longlong.h"
 
@@ -119,9 +118,10 @@ mpn_div_q (mp_ptr qp,
 
   ASSERT_ALWAYS (FUDGE >= 2);
 
+  dh = dp[dn - 1];
   if (dn == 1)
     {
-      mpn_divrem_1 (qp, 0L, np, nn, dp[dn - 1]);
+      mpn_divrem_1 (qp, 0L, np, nn, dh);
       return;
     }
 
@@ -133,7 +133,6 @@ mpn_div_q (mp_ptr qp,
                           |_______|  */
       new_np = scratch;
 
-      dh = dp[dn - 1];
       if (LIKELY ((dh & GMP_NUMB_HIGHBIT) == 0))
 	{
 	  count_leading_zeros (cnt, dh);
@@ -228,7 +227,6 @@ mpn_div_q (mp_ptr qp,
 	new_np = TMP_ALLOC_LIMBS (new_nn + 1);
 
 
-      dh = dp[dn - 1];
       if (LIKELY ((dh & GMP_NUMB_HIGHBIT) == 0))
 	{
 	  count_leading_zeros (cnt, dh);
@@ -315,7 +313,7 @@ mpn_div_q (mp_ptr qp,
 	  rn -= rp[rn - 1] == 0;
 
           if (rn > nn || mpn_cmp (np, rp, nn) < 0)
-            mpn_decr_u (qp, 1);
+            MPN_DECR_U (qp, qn, 1);
         }
     }
 

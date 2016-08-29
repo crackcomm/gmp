@@ -207,7 +207,6 @@ see https://www.gnu.org/licenses/.  */
 #include <sys/times.h>  /* for times() and struct tms */
 #endif
 
-#include "gmp.h"
 #include "gmp-impl.h"
 
 #include "speed.h"
@@ -774,8 +773,8 @@ cgt_works_p (void)
     }
 
   cgt_unittime = unit.tv_sec + unit.tv_nsec * 1e-9;
-  if (speed_option_verbose)
-    printf ("clock_gettime is %s accurate\n", unittime_string (cgt_unittime));
+  printf ("clock_gettime is %s accurate\n",
+	  unittime_string (cgt_unittime));
 
   if (cgt_unittime < 10e-9)
     {

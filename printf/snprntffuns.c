@@ -36,7 +36,6 @@ see https://www.gnu.org/licenses/.  */
 #include <stdio.h>
 #include <string.h>
 
-#include "gmp.h"
 #include "gmp-impl.h"
 
 
@@ -63,8 +62,7 @@ static int
 gmp_snprintf_format (struct gmp_snprintf_t *d, const char *fmt,
                      va_list orig_ap)
 {
-  int      ret;
-  size_t   step, alloc, avail;
+  int      ret, step, alloc, avail;
   va_list  ap;
   char     *p;
 
@@ -76,7 +74,10 @@ gmp_snprintf_format (struct gmp_snprintf_t *d, const char *fmt,
       va_copy (ap, orig_ap);
       ret = vsnprintf (d->buf, avail, fmt, ap);
       if (ret == -1)
-        return ret;
+        {
+          ASSERT (strlen (d->buf) == avail-1);
+          ret = avail-1;
+        }
 
       step = MIN (ret, avail-1);
       d->size -= step;
@@ -102,7 +103,7 @@ gmp_snprintf_format (struct gmp_snprintf_t *d, const char *fmt,
       ret = vsnprintf (p, alloc, fmt, ap);
       (*__gmp_free_func) (p, alloc);
     }
-  while (ret == alloc-1);
+  while (ret == alloc-1 || ret == -1);
 
   return ret;
 }
