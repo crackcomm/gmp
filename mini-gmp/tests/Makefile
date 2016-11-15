@@ -1,6 +1,6 @@
 # Note: Requires GNU make
 
-# Copyright 2011, 2012, 2014, 2016 Free Software Foundation, Inc.
+# Copyright 2011, 2012, 2014 Free Software Foundation, Inc.
 #
 # This file is part of the GNU MP Library test suite.
 #
@@ -21,8 +21,8 @@ srcdir=.
 MINI_GMP_DIR=..
 
 CC = gcc
-CFLAGS = -O -Wall -g
-CPPFLAGS =
+EXTRA_CFLAGS = -O -Wall -g
+CFLAGS = $(EXTRA_CFLAGS) -I$(MINI_GMP_DIR)
 LDFLAGS =
 
 LIBS = -lgmp -lm -lmcheck
@@ -49,12 +49,12 @@ clean:
 .PRECIOUS: %.o
 
 %.o: %.c $(MINI_GMP_DIR)/mini-gmp.h hex-random.h mini-random.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 testutils.o: $(MINI_GMP_DIR)/mini-gmp.c
 
 %: %.o $(MISC_OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LIBS) -o $@
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 # Missing tests include:
 #   mpz_cmp_d, mpz_popcount, mpz_hamdist, mpz_ui_pow_ui
