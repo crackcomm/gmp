@@ -1,7 +1,7 @@
 ## Process this file with automake to generate Makefile.in
 
 
-# Copyright 1991, 1993, 1994, 1996, 1997, 1999-2004, 2006-2009, 2011-2016 Free
+# Copyright 1991, 1993, 1994, 1996, 1997, 1999-2004, 2006-2009, 2011-2015 Free
 # Software Foundation, Inc.
 #
 #  This file is part of the GNU MP Library.
@@ -87,8 +87,6 @@
 #        5.1.2   11:2:1    7:2:3     -
 #        6.0.0   12:0:2    8:0:4     -
 #        6.1.0   13:0:3    9:0:5     -
-#        6.1.1   13:1:3    9:1:5     -
-#        6.1.2   13:2:3    9:2:5     -
 #
 # Starting at 3:0:0 is a slight abuse of the versioning system, but it
 # ensures we're past soname libgmp.so.2, which was used on Debian GNU/Linux
@@ -102,11 +100,11 @@
 # libgmpxx.so.3.0.4) incrementing, to make it clear which GMP it's from.
 
 LIBGMP_LT_CURRENT    = 13
-LIBGMP_LT_REVISION   = 2
+LIBGMP_LT_REVISION   = 0
 LIBGMP_LT_AGE        = 3
 
 LIBGMPXX_LT_CURRENT  = 9
-LIBGMPXX_LT_REVISION = 2
+LIBGMPXX_LT_REVISION = 0
 LIBGMPXX_LT_AGE      = 5
 
 
@@ -115,15 +113,17 @@ SUBDIRS = tests mpn mpz mpq mpf printf scanf rand cxx demos tune doc
 EXTRA_DIST = configfsf.guess configfsf.sub .gdbinit INSTALL.autoconf \
 	     COPYING.LESSERv3 COPYINGv2 COPYINGv3
 
+# Put asl.h here for now.
+EXTRA_DIST += asl.h
 
 if WANT_CXX
 GMPXX_HEADERS_OPTION = gmpxx.h
 endif
 EXTRA_DIST += gmpxx.h
 
-# gmp.h and mp.h are architecture dependent, mainly since they encode the
-# limb size used in libgmp.  For that reason they belong under $exec_prefix
-# not $prefix, strictly speaking.
+# gmp.h is architecture dependent, mainly since it encodes the limb size used
+# in libgmp.  For that reason it belongs under $exec_prefix not $prefix,
+# strictly speaking.
 #
 # $exec_prefix/include is not in the default include path for gcc built to
 # the same $prefix and $exec_prefix, which might mean gmp.h is not found,
@@ -427,14 +427,15 @@ check-mini-gmp:
 	abs_srcdir="`cd $(srcdir) && pwd`" ; \
 	$(MKDIR_P) mini-gmp/tests \
 	&& cd mini-gmp/tests \
-	&& TEST_LIBRARY_PATH="../../.libs"  \
+	&& LD_LIBRARY_PATH="../../.libs:$$LD_LIBRARY_PATH" \
+	   DYLD_LIBRARY_PATH="../../.libs:$$DYLD_LIBRARY_PATH" \
 	   $(MAKE) -f "$$abs_srcdir/mini-gmp/tests/Makefile" \
 		VPATH="$$abs_srcdir/mini-gmp/tests" \
 		srcdir="$$abs_srcdir/mini-gmp/tests" \
 		MINI_GMP_DIR="$$abs_srcdir/mini-gmp" \
 		LDFLAGS="-L../../.libs" \
 		LIBS="-lgmp -lm" \
-		CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="-I../.." check
+		CC="$(CC_FOR_BUILD)" EXTRA_CFLAGS="-g -I../.." check
 
 clean-mini-gmp:
 	if [ -d mini-gmp/tests ] ; then \
