@@ -1,6 +1,6 @@
 /* Exercise some mpz_..._si functions.
 
-Copyright 2013, 2016 Free Software Foundation, Inc.
+Copyright 2013 Free Software Foundation, Inc.
 
 This file is part of the GNU MP Library test suite.
 
@@ -62,7 +62,7 @@ check_si_cmp (const mpz_t sz, const mpz_t oz, long si, long oi, int c)
 {
   if (mpz_cmp (sz, oz) != c)
     {
-      printf ("mpz_cmp (sz, oz) != %i.\n", c);
+      printf ("mpz_cmp_si (sz, oz) != %i.\n", -c);
       goto fail;
     }
 
@@ -73,19 +73,6 @@ check_si_cmp (const mpz_t sz, const mpz_t oz, long si, long oi, int c)
       if (mpz_cmp_si (oz, si) != -c)
 	{
 	  printf ("mpz_cmp_si (oz, %ld) != %i.\n", si, -c);
-	  goto fail;
-	}
-    }
-  else
-    {
-      if (mpz_cmp_si (sz, si) != c)
-	{
-	  printf ("mpz_cmp_si (sz, %ld) != %i.\n", si, c);
-	  goto fail;
-	}
-      if (mpz_cmp_si (sz, -c) != c)
-	{
-	  printf ("mpz_cmp_si (sz, %i) != %i.\n", -c, c);
 	  goto fail;
 	}
     }
