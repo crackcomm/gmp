@@ -30,6 +30,7 @@
 
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/tests
+AM_LDFLAGS = -no-install
 
 EXTRA_DIST = alpha.asm pentium.asm sparcv9.asm hppa.asm hppa2.asm hppa2w.asm \
   ia64.asm powerpc.asm powerpc64.asm x86_64.asm many.pl
@@ -179,6 +180,3 @@ fac_ui.c: $(top_builddir)/mpz/fac_ui.c
 	echo "#include \"mpz/fac_ui.c\""             >>fac_ui.c
 
 include ../mpn/Makeasm.am
-
-.NOTPARALLEL:
-
